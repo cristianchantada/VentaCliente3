@@ -16,7 +16,7 @@ public class Ventana2 extends JFrame {
     private JTextField textNif;
     private JTextField textTarjetaCredito;
 
-    private final String PATH = "C:\\Users\\Usuario\\Desktop\\ventanaCliente2\\src\\ventana2";
+    private final String PATH = "C:\\Users\\Usuario\\Desktop\\VentaCliente3\\src\\ventana2";
     private final String FILE_NAME = "clients.txt";
     private final String PATH_TO_FILE = PATH + "\\" + FILE_NAME;
 
@@ -80,20 +80,32 @@ public class Ventana2 extends JFrame {
         darAltaBoton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+            	
+            	// Quito espacios y guiones a las cadenas original de NIF y tarjeta de Crédito
+            	textNif.setText(textNif.getText().replaceAll("\\s", "").replaceAll("-", ""));
+            	textTarjetaCredito.setText(textTarjetaCredito.getText().replaceAll("\\s", "").replaceAll("-", ""));
 
                 boolean dataValidateOk = validateClientData(textNombre.getText(), textNif.getText(), textTarjetaCredito.getText());
-                boolean nifValidateOk = validateNifAlgorithm(textNif.getText());
+                boolean nifValidateOk = false;
+                if(dataValidateOk) {
+                	System.out.println("Procediendo a la validación del DNI según el algoritmo.....");
+                	nifValidateOk = validateNifAlgorithm(textNif.getText());
+                }
+                		
 
                 if (dataValidateOk && nifValidateOk) {
+                	System.out.println("Los datos del cliente y la comprobación del DNI según su algoritmo han sido pasados satisfactoriamente");
                     try {
                         FileWriter fw = new FileWriter(PATH_TO_FILE, true);
-                        fw.write("El cliente ha sido registrado:\n" + "Nombre: " + textNombre.getText() + " | "
+                        fw.write("Nombre: " + textNombre.getText() + " | "
                                 + "NIF: " + textNif.getText() + " | " + "Tarjeta Crédito: "
                                 + textTarjetaCredito.getText());
 
+                        System.out.println("El cliente " + textNombre.getText() + " ha sido resgistrado en el sistema");
                         fw.close();
                     } catch (IOException ex) {
-                        System.out.println(ex);
+                        System.out.println("El cliente no ha podido ser guardado en clients.txt, el FileWriter ha fallado:\n" + ex);
+                        System.exit(1);
                     }
 
                     verMensaje("Nombre: " + textNombre.getText() + "\n" + "NIF: " + textNif.getText() + "\n"
@@ -104,6 +116,8 @@ public class Ventana2 extends JFrame {
                     textNif.setText("");
                     textTarjetaCredito.setText("");
                 } else {
+                	verMensaje("Introduzca sus datos nuevamente");
+                	System.out.println("Se inicializa la ventana con los valores a cadena vacía");
                     textNombre.setText("");
                     textNif.setText("");
                     textTarjetaCredito.setText("");
@@ -124,15 +138,11 @@ public class Ventana2 extends JFrame {
 
     private boolean validateClientData(String name, String nif, String creditCardNumber) {
 
-        // Quito espacios y guiones a las cadenas original de NIF y tarjeta de Créito
-        creditCardNumber = creditCardNumber.replaceAll("\\s", "");
-        creditCardNumber = creditCardNumber.replaceAll("-", "");
-        nif = nif.replaceAll("\\s", "");
-        nif = nif.replaceAll("-", "");
+
+        System.out.println("El DNI formateado es " + nif + ", y el número de tarjeta de crédito formateado es " + creditCardNumber);
 
         // Creo las Regex para los distintos datos
-        String nameRegex = "^[\\p{L}]+(?:[\\p{Zs}][\\p{L}]+)*$"
-                ;
+        String nameRegex = "^[\\p{L}]+(?:[\\p{Zs}][\\p{L}]+)*$";
         String nifRegex = "^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKEtrwagmyfpdxbnjzsqvhlcke]$|^[XYZxyz][0-9]{7}$";
         String creditCardNumberRegex = "^(\\d\\s*){16}$";
 
@@ -170,7 +180,8 @@ public class Ventana2 extends JFrame {
             System.out.println(message);
             checker = false;
         }
-
+        
+        System.out.println("Validate client data ok? = " + checker);
         return checker;
     }
 
@@ -178,30 +189,43 @@ public class Ventana2 extends JFrame {
     private boolean validateNifAlgorithm(String nif) {
         String[] lettersTable = {"T", "R", "W", "A", "G", "M", "Y", "F", "P", "D", "X", "B", "N", "J", "Z", "S", "Q", "V", "H", "L", "C", "K", "E"};
 
-        if (nif.charAt(0) == 'X') {
-            char[] nifCharArray = nif.toCharArray();
-            nifCharArray[0] = '0';
-            String modifiedNifString = new String(nifCharArray);
-        } else if (nif.charAt(0) == 'Y') {
-            char[] nifCharArray = nif.toCharArray();
-            nifCharArray[0] = '1';
-            String modifiedNifString = new String(nifCharArray);
-        } else if (nif.charAt(0) == 'Z') {
-            char[] nifCharArray = nif.toCharArray();
-            nifCharArray[0] = '2';
-            String modifiedNifString = new String(nifCharArray);
-        }
+        if(nif.length() > 0) {
+            if (nif.charAt(0) == 'X') {
+                char[] nifCharArray = nif.toCharArray();
+                nifCharArray[0] = '0';
+                nif = new String(nifCharArray);
+            } else if (nif.charAt(0) == 'Y') {
+                char[] nifCharArray = nif.toCharArray();
+                nifCharArray[0] = '1';
+                nif = new String(nifCharArray);
+            } else if (nif.charAt(0) == 'Z') {
+                char[] nifCharArray = nif.toCharArray();
+                nifCharArray[0] = '2';
+                nif = new String(nifCharArray);
+            }
 
-        String letter = nif.substring(8);
-        String upperLetter = letter.toUpperCase();
-        Integer number = Integer.parseInt(nif.substring(0, 8));
-        int rest = number % 23;
+            String letter = nif.substring(8);
+            String upperLetter = letter.toUpperCase();
+            Integer number = Integer.parseInt(nif.substring(0, 8));
+            int rest = number % 23;
+            
+            System.out.println("Letra del DNI es : " + upperLetter);
+            System.out.println("El número del DNI es: " + number);
+            System.out.println("El resto de dividir " + number + " entre 23 es " + rest);
 
-        if (lettersTable[rest].equals(upperLetter)) {
-            return true;
+            if (lettersTable[rest].equals(upperLetter)) {
+            	System.out.println("El DNI supera la prueba : " + lettersTable[rest] + " == " + upperLetter);
+                return true;
+            } else {
+            	System.out.println("El DNI no supera la prueba de su algoritmo: ");
+            	System.out.println(lettersTable[rest] + " y " + upperLetter + " son dstintas");
+                return false;
+            }
         } else {
-            return false;
+        	System.out.println("El campo DNI ha llegado vacío al checkeo con algoritmo DNI");
+        	return false;
         }
+
     }
 
     
