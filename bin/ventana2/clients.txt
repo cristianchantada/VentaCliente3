@@ -1,3 +1,0 @@
-El cliente ha sido registrado:
-Nombre: Cristian Varela Casas | NIF: 76581933Y | Tarjeta Crédito: 1234123412341234El cliente ha sido registrado:
-Nombre: Paula Míguez Conde | NIF: 76581933Y | Tarjeta Crédito: 1234123412341234
