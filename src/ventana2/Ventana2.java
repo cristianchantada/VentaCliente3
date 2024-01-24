@@ -5,6 +5,7 @@ import java.io.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.*;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,6 +91,35 @@ public class Ventana2 extends JFrame {
                 boolean dataValidateOk = validateClientData(textNombre.getText(), textNif.getText(), textTarjetaCredito.getText(), textBankAccount.getText());
                 boolean nifValidateOk = false;
                 boolean bankAccountOk = false;
+                
+                // Código lectura fichero para comprobar el número de tarjetas de crédito del cliente
+                
+                File fileReaderDb = new File(PATH_TO_FILE);
+                String nameUpperFormat = textNombre.getText().toUpperCase().replaceAll("\\s", ""); 
+                
+                try {
+                	Scanner sc = new Scanner(fileReaderDb);
+                	while(sc.hasNextLine()) {
+                		String line = sc.nextLine().replaceAll("\\s", "");
+                		String[] clientData = line.split("|");
+                		
+                		String clientName = clientData[0].toUpperCase();
+                		if(clientName.equals(nameUpperFormat)) {
+                			System.out.println("Cliente detectado en la BD");
+                			if(clientData.length > 5) {
+                				verMensaje("Usted ya tiene 2 tarjetas registradas, no puede registrar más");
+                				dataValidateOk = false;
+                				break;
+                			} else {
+                				
+                			}
+                		}
+                		
+                	}
+
+                } catch (Exception ex) {
+                	System.out.println("Error en la lectura del fichero: " + e);
+                }
                 
                 if(dataValidateOk) {
                 	System.out.println("Procediendo a la validación del DNI según el algoritmo.....");
