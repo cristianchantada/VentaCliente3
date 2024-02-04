@@ -8,8 +8,13 @@ import java.awt.event.*;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Ventana2 extends JFrame {
+
+public class Ventana3 extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
@@ -19,10 +24,10 @@ public class Ventana2 extends JFrame {
 
     private final String PATH = "C:\\Users\\Usuario\\Desktop\\VentanaClienteCuentas\\VentaCliente3\\src\\ventana2";
     private final String FILE_NAME = "clients.txt";
-    private final String FILE_COPY = "clientsCopy.txt";
     private final String PATH_TO_FILE = PATH + "\\" + FILE_NAME;
-    private final String PATH_TO_COPY = PATH + "\\" + FILE_COPY;
     private JTextField textBankAccount;
+    
+    List<Cliente> listaClientes = new ArrayList<>();
 
     /**
      * Launch the application.
@@ -31,7 +36,7 @@ public class Ventana2 extends JFrame {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    Ventana2 frame = new Ventana2();
+                    Ventana3 frame = new Ventana3();
                     frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -43,7 +48,7 @@ public class Ventana2 extends JFrame {
     /**
      * Create the frame.
      */
-    public Ventana2() {
+    public Ventana3() {
         setTitle("Introducción de datos del cliente");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 895, 605);
@@ -79,6 +84,116 @@ public class Ventana2 extends JFrame {
         textTarjetaCredito.setColumns(10);
         textTarjetaCredito.setBounds(212, 114, 178, 20);
         contentPane.add(textTarjetaCredito);
+        
+        
+     // ... (resto de tu código)
+
+        JButton darAltaBoton = new JButton("Dar de alta");
+        darAltaBoton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+            	// Quito espacios y guiones a las cadenas original de NIF, tarjeta de Crédito y cuenta bancaria.
+            	textNif.setText(textNif.getText().replaceAll("\\s", "").replaceAll("-", ""));
+            	textTarjetaCredito.setText(textTarjetaCredito.getText().replaceAll("\\s", "").replaceAll("-", ""));
+            	textBankAccount.setText(textBankAccount.getText().replaceAll("\\s", "").replaceAll("-", ""));
+            	
+                boolean dataValidateOk = validateClientData(textNombre.getText(), textNif.getText(), textTarjetaCredito.getText(), textBankAccount.getText());
+                boolean nifValidateOk = false;
+                boolean bankAccountOk = false;
+
+                // Código lectura fichero para comprobar el número de tarjetas de crédito del cliente
+                File fileReaderDb = new File(PATH_TO_FILE);
+                String nameUpperFormat = textNombre.getText().toUpperCase().replaceAll("\\s", "");
+
+                try {
+                    Scanner sc = new Scanner(fileReaderDb);
+                    while (sc.hasNextLine()) {
+                        String line = sc.nextLine().replaceAll("\\s", "");
+                        String[] clientData = line.split("\\|");
+
+                        String clientName = clientData[0].toUpperCase();
+                        if (clientName.equals(nameUpperFormat)) {
+                            System.out.println("Cliente detectado en la BD");
+                            if (clientData.length > 5) {
+                                verMensaje("Usted ya tiene 2 tarjetas registradas, no puede registrar más");
+                                dataValidateOk = false;
+                                break;
+                            } else {
+                                // Puedes agregar aquí cualquier lógica adicional que necesites para verificar el límite de tarjetas
+                            }
+                        }
+
+                    }
+
+                } catch (Exception ex) {
+                    System.out.println("Error en la lectura del fichero: " + ex);
+                }
+
+                if (dataValidateOk) {
+                    System.out.println("Procediendo a la validación del DNI según el algoritmo.....");
+                    nifValidateOk = validateNifAlgorithm(textNif.getText());
+                }
+
+                if (dataValidateOk) {
+                    System.out.println("Procediendo a la validación del IBAN según el algoritmo.....");
+                    bankAccountOk = validateBankAccountAlgorithm(textBankAccount.getText());
+                }
+
+                // ... (resto de tu código)
+
+                if (dataValidateOk && nifValidateOk && bankAccountOk) {
+                    System.out.println("Los datos del cliente y la comprobación del DNI según su algoritmo han sido pasados satisfactoriamente");
+                    try {
+
+                        Cliente cliente = new Cliente(
+                                textNombre.getText(),
+                                textNif.getText(),
+                                textTarjetaCredito.getText(),
+                                textBankAccount.getText()
+                        );
+
+                        // Verificar si el cliente ya existente tiene más de 2 tarjetas de crédito
+                        Cliente clienteExistente = listaClientes.stream()
+                                .filter(c -> c.getName().equals(nameUpperFormat))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (clienteExistente != null && clienteExistente.getCreditCards().size() >= 2) {
+                            System.out.println("¡Error! El cliente ya existente tiene más de 2 tarjetas de crédito.");
+                        } else {
+                            if (clienteExistente != null) {
+                                // El cliente ya existe, actualizar la instancia con la nueva tarjeta de crédito
+                                clienteExistente.addCreditCard(textTarjetaCredito.getText());
+                                System.out.println("Se ha añadido una nueva tarjeta de crédito al cliente existente.");
+                            } else {
+                                // El cliente no existe, agregar la nueva instancia a listaClientes
+                                listaClientes.add(cliente);
+                                System.out.println("Se ha registrado un nuevo cliente.");
+                            }
+
+                            // Resto de la lógica (recuperar clientes, etc.)
+                            guardarClientesEnArchivo(listaClientes);
+                        }
+
+                    } catch (IOException ex) {
+                        System.out.println("El cliente no ha podido ser guardado en clients.txt, el FileWriter ha fallado:\n" + ex);
+                        System.exit(1);
+                    }
+
+                    // ... (resto de tu código)
+                } else {
+                    // ... (resto de tu código)
+                }
+            }
+        });
+
+        // ... (resto de tu código)
+
+        
+        
+        
+        
 
         JButton darAltaBoton = new JButton("Dar de alta");
         darAltaBoton.addMouseListener(new MouseAdapter() {
@@ -94,69 +209,33 @@ public class Ventana2 extends JFrame {
                 boolean nifValidateOk = false;
                 boolean bankAccountOk = false;
                 
-                String tarjeta1 = null;
-                
                 // Código lectura fichero para comprobar el número de tarjetas de crédito del cliente
-                
+
                 File fileReaderDb = new File(PATH_TO_FILE);
                 String nameUpperFormat = textNombre.getText().toUpperCase().replaceAll("\\s", ""); 
                 
                 try {
                 	Scanner sc = new Scanner(fileReaderDb);
-                	FileWriter fwCopy = new FileWriter(PATH_TO_COPY);
                 	while(sc.hasNextLine()) {
-                		String line = sc.nextLine();/*.replaceAll("\\s", "");*/
-                		String[] clientData = line.split("\\|");
+                		String line = sc.nextLine().replaceAll("\\s", "");
+                		String[] clientData = line.split("|");
                 		
-                		if(clientData.length >= 0) {
-                    		String[] clientNameField = clientData[0].split("\\s");
-                    		String[] clientNifField = clientData[1].split("\\s");
-                    		String[] clientCreditCardField = clientData[2].split("\\s");
-                    		String[] clientIbanField = clientData[3].split("\\s");
-                    		
-                    		String clientOldName = clientNameField[1].toUpperCase();
-                    		String clientOldNif = clientNifField[2];
-                    		String clientOldCreditCard = clientCreditCardField[3];
-                    		String clientOldIban = clientIbanField[3];
-                    		
-                    		System.out.println("Cliente = CLiente nuev0? = " + clientOldName.equals(nameUpperFormat));
-                    		System.out.println("clientName= " + clientOldName);
-                    		System.out.println("nameUpperFormat= " + nameUpperFormat);
-                    		
-                    		
-                    		System.out.println("clientOldNif= " + clientOldNif);
-                    		System.out.println("clientOldCreditCard= " + clientOldCreditCard);
-                    		System.out.println("clientOldIban= " + clientOldIban);
-                    		
-                    		if(clientOldName.equals(nameUpperFormat)) {
-                    			System.out.println("Cliente detectado en la BD");
-                    			if(clientData.length > 4) {
-                    				verMensaje("Usted ya tiene 2 tarjetas registradas, no puede registrar más");
-                    				dataValidateOk = false;
-                    				break;
-                    			} else {
-                    				System.out.println("Comprobado que el cliente no tiene más de 2 tarjetas de crédito");
-                    				textNombre.setText(clientOldName);
-                    				textNif.setText(clientOldNif);
-                    				textBankAccount.setText(clientOldIban);
-                    				tarjeta1 = clientOldCreditCard;
-                    			}
-                    		} else { 
-                    			fwCopy.write(line + "\n");
-                    		}
-                    		
-                		} else {
-                			continue;
+                		String clientName = clientData[0].toUpperCase();
+                		if(clientName.equals(nameUpperFormat)) {
+                			System.out.println("Cliente detectado en la BD");
+                			if(clientData.length > 5) {
+                				verMensaje("Usted ya tiene 2 tarjetas registradas, no puede registrar más");
+                				dataValidateOk = false;
+                				break;
+                			} else {
+                				
+                			}
                 		}
+                		
                 	}
-                	
-                	fwCopy.close();
-                	sc.close();
 
-                } catch (IOException ioex) {
-                	System.out.println("Error en la lectura del fichero: " + ioex);
-                } catch (Exception exc) {
-                	System.out.println("Error: " + exc);
+                } catch (Exception ex) {
+                	System.out.println("Error en la lectura del fichero: " + e);
                 }
                 
                 if(dataValidateOk) {
@@ -173,58 +252,57 @@ public class Ventana2 extends JFrame {
                 if (dataValidateOk && nifValidateOk && bankAccountOk) {
                 	System.out.println("Los datos del cliente y la comprobación del DNI según su algoritmo han sido pasados satisfactoriamente");
                     try {
-                    	FileWriter fw;
-                    	File copyFileReader = new File(PATH_TO_COPY);
-                    	if(tarjeta1 != null) {
-                    		fw = new FileWriter(PATH_TO_FILE);               
-                    		Scanner sc = new Scanner(copyFileReader);
-
-                        	while(sc.hasNextLine()) {
-                        		String line = sc.nextLine();
-                        		fw.write(line + "\n");
-                        		
-                        	}
-
-                    		fw.write("Nombre: " + textNombre.getText() + " | "
-                                    + "NIF: " + textNif.getText() + " | Tarjeta Crédito 1: "
-                                    + tarjeta1 +" | IBAN bancario: " 
-                                    + textBankAccount.getText()+ 
-                                    " | Tarjeta Crédito 2: "
-                                    + textTarjetaCredito.getText() + "\n"
-                                    );
-                    		
-                    		sc.close();
-                    		System.out.println("El cliente " + textNombre.getText() + " ha sido ACTUALIZADO en el sistema");
-                    	} else {
-                    		fw = new FileWriter(PATH_TO_FILE, true);
-                    		fw.write("Nombre: " + textNombre.getText() + " | "
-                                    + "NIF: " + textNif.getText() + " | Tarjeta Crédito: "
-                                    + textTarjetaCredito.getText() + " | IBAN bancario: " 
-                                    + textBankAccount.getText()+ "\n"
-                                    );
-
-                            System.out.println("El cliente " + textNombre.getText() + " ha sido resgistrado en el sistema");
+                    	
+                    	Cliente cliente = new Cliente(
+                    			textNombre.getText(),
+                    			textNif.getText(),
+                    			textTarjetaCredito.getText(),
+                    			textBankAccount.getText()
+            			);
+                    	
+        				try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PATH_TO_FILE))) {
+        				    while (true) {
+        				        try {
+        				            Cliente clienteRecuperado = (Cliente) ois.readObject();
+        				            listaClientes.add(clienteRecuperado);
+        				        } catch (Exception exc) {
+        				            break;
+        				        }
+        				    }
+        				
+        				    System.out.println("Todos los clientes han sido recuperados del archivo.");
+        				} catch (Exception exc) {
+        				    exc.printStackTrace();
+        				}
+                    	
+                    	
+                    	try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(PATH_TO_FILE))) {
+                    	    oos.writeObject(cliente);
+                    	    System.out.println("El cliente ha sido guardado en el archivo.");
+                    	} catch (Exception exc) {
+                    	    exc.printStackTrace();
                     	}
-                        
-                        
+                    	
+                    	
+                        FileWriter fw = new FileWriter(PATH_TO_FILE, true);
+                        fw.write("Nombre: " + textNombre.getText() + " | "
+                                + "NIF: " + textNif.getText() + " | Tarjeta Crédito: "
+                                + textTarjetaCredito.getText() + " | IBAN bancario: " 
+                                + textBankAccount.getText()+ "\n"
+                                );
+
+                        System.out.println("El cliente " + textNombre.getText() + " ha sido resgistrado en el sistema");
                         fw.close();
                     } catch (IOException ex) {
                         System.out.println("El cliente no ha podido ser guardado en clients.txt, el FileWriter ha fallado:\n" + ex);
                         System.exit(1);
                     }
-                    
-                    if(tarjeta1 != null) {
-                    	verMensaje("ACTUALIZADO Cliente " + textNombre.getText() + " con:\n" +
-                                "SEGUNDA TARJETA DE CRÉDITO: " + textTarjetaCredito.getText() + "\n");
-                    	verMensaje("Registro ACTUALIZADO");
 
-                    } else {
-                        verMensaje("Nombre: " + textNombre.getText() + "\n" + "NIF: " + textNif.getText() + "\n"
-                                + "Tarjeta Crédito: " + textTarjetaCredito.getText() + "\n" 
-                        		+ "IBAN bancario: " + textBankAccount.getText());
-                        verMensaje("Registro guardado");
-                    }
-                    
+                    verMensaje("Nombre: " + textNombre.getText() + "\n" + "NIF: " + textNif.getText() + "\n"
+                            + "Tarjeta Crédito: " + textTarjetaCredito.getText() + "\n" 
+                    		+ "IBAN bancario: " + textBankAccount.getText());
+
+                    verMensaje("Registro guardado");
                     textNombre.setText("");
                     textNif.setText("");
                     textTarjetaCredito.setText("");
@@ -239,7 +317,12 @@ public class Ventana2 extends JFrame {
                 }
             }
         });
-
+        
+        /*darAltaBoton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            }
+        });*/
+        
         darAltaBoton.setBounds(212, 192, 178, 23);
         contentPane.add(darAltaBoton);
         
